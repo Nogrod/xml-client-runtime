@@ -106,10 +106,10 @@ class Client
         return $serializerBuilder->build();
     }
 
-    public function call($functionName, $outClass, $message)
+    public function call($operation, $outClass, $message)
     {
-        $this->prepareMessage($message);
-        $this->requestMessage = $request = $this->buildRequest($functionName, $message);
+        $this->prepareMessage($operation, $message);
+        $this->requestMessage = $request = $this->buildRequest($operation, $message);
         try {
             $this->responseMessage = $response = $this->client->sendRequest($request);
             if (strpos($response->getHeaderLine('Content-Type'), 'xml') === false) {
@@ -220,14 +220,14 @@ class Client
         return $this->deserialize((string) $response->getBody(), $outClass);
     }
 
-    protected function prepareMessage($message)
+    protected function prepareMessage($operation, $message)
     {
         return $message;
     }
 
-    protected function buildRequest($functionName, $message)
+    protected function buildRequest($operation, $message)
     {
-        return $this->messageFactory->createRequest('POST', $this->getUrl(), $this->buildHeaders($functionName), $this->serialize($message));
+        return $this->messageFactory->createRequest('POST', $this->getUrl(), $this->buildHeaders($operation), $this->serialize($message));
     }
 
     protected function buildHeaders(string $operation)
