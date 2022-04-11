@@ -196,12 +196,21 @@ class Client
      *
      * @return string
      */
-    public function serializeSabre($message)
+    public function serializeSabre($message, $encoding = 'utf-8', $indent = true)
     {
         $classname = get_class($message);
         $classname = mb_substr($classname, strrpos($classname, '\\') + 1);
 
-        return $this->sabre->write($classname, $message);
+        //return $this->sabre->write($classname, $message);
+        $w = $this->sabre->getWriter();
+        \Closure::fromCallable(function () { $this->namespacesWritten = true; })->call($w);
+        $w->openMemory();
+        $w->contextUri = null;
+        $w->setIndent($indent);
+        $w->startDocument('1.0', $encoding);
+        $w->writeElement($classname, $message);
+
+        return $w->outputMemory();
     }
 
     protected function getUrl()
