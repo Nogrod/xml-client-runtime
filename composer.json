@@ -9,20 +9,25 @@
   "license": "MIT",
   "require": {
     "php": "^7.4|^8.0",
-    "psr/http-message": "^1.0",
-    "php-http/httplug": "^2.0",
-    "php-http/discovery": "^1.0",
-    "php-http/message": "^1.0",
-    "php-http/message-factory": "^1.0",
+    "goetas-webservices/xsd2php-runtime": "^0.2",
     "guzzlehttp/psr7": "^1.0|^2.0",
     "jms/serializer": "^2.0|^3.0",
-    "symfony/expression-language": "^4.0|^5.0",
+    "php-http/discovery": "^1.0",
+    "php-http/httplug": "^2.0",
+    "php-http/message": "^1.0",
+    "psr/http-factory": "^1.0",
+    "psr/http-message": "^1.0",
     "sabre/xml": "^4.0",
-    "goetas-webservices/xsd2php-runtime": "^0.2"
+    "symfony/expression-language": "^4.0|^5.0"
   },
   "autoload": {
     "psr-4": {
       "Nogrod\\XMLClientRuntime\\": "src"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
     }
   }
 }

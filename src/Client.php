@@ -5,10 +5,8 @@ namespace Nogrod\XMLClientRuntime;
 use GoetasWebservices\Xsd\XsdToPhpRuntime\Jms\Handler\BaseTypesHandler;
 use GoetasWebservices\Xsd\XsdToPhpRuntime\Jms\Handler\XmlSchemaDateHandler;
 use Http\Client\Exception\HttpException;
-use Http\Client\HttpClient;
-use Http\Discovery\HttpClientDiscovery;
-use Http\Discovery\MessageFactoryDiscovery;
-use Http\Message\MessageFactory;
+use Http\Discovery\Psr17Factory;
+use Http\Discovery\Psr18ClientDiscovery;
 use JMS\Serializer\Expression\ExpressionEvaluator;
 use JMS\Serializer\Handler\HandlerRegistryInterface;
 use JMS\Serializer\Serializer;
@@ -20,6 +18,7 @@ use JMS\Serializer\Visitor\Factory\XmlSerializationVisitorFactory;
 use Nogrod\XMLClientRuntime\Exception\ServerException;
 use Nogrod\XMLClientRuntime\Exception\UnexpectedFormatException;
 use Nogrod\XMLClientRuntime\Handler\JsonDateHandler;
+use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
@@ -35,12 +34,12 @@ class Client
     protected $sabre;
 
     /**
-     * @var HttpClient
+     * @var ClientInterface
      */
     protected $client;
 
     /**
-     * @var MessageFactory
+     * @var Psr17Factory
      */
     protected $messageFactory;
 
@@ -56,13 +55,13 @@ class Client
 
     private $config;
 
-    public function __construct(array $config = [], Serializer $serializer = null, MessageFactory $messageFactory = null, HttpClient $client = null)
+    public function __construct(array $config = [], Serializer $serializer = null, Psr17Factory $messageFactory = null, ClientInterface $client = null)
     {
         $this->config = $config;
         $this->serializer = $serializer ?: self::createSerializer($this->getJmsMetaPath(), $this->getConfig('cacheDir'));
         $this->sabre = $this->getSabre();
-        $this->client = $client ?: HttpClientDiscovery::find();
-        $this->messageFactory = $messageFactory ?: MessageFactoryDiscovery::find();
+        $this->client = $client ?: Psr18ClientDiscovery::find();
+        $this->messageFactory = $messageFactory ?: new Psr17Factory();
     }
 
     /**
