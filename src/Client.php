@@ -4,6 +4,7 @@ namespace Nogrod\XMLClientRuntime;
 
 use GoetasWebservices\Xsd\XsdToPhpRuntime\Jms\Handler\BaseTypesHandler;
 use GoetasWebservices\Xsd\XsdToPhpRuntime\Jms\Handler\XmlSchemaDateHandler;
+use GuzzleHttp\Psr7\Utils;
 use Http\Client\Exception\HttpException;
 use Http\Discovery\Psr17Factory;
 use Http\Discovery\Psr18ClientDiscovery;
@@ -235,7 +236,19 @@ class Client
 
     protected function buildRequest($operation, $message)
     {
-        return $this->messageFactory->createRequest('POST', $this->getUrl(), $this->buildHeaders($operation), $this->serialize($message));
+        $psrRequest = $this->messageFactory->createRequest('POST', $this->getUrl());
+
+        return $this->withHeaders($psrRequest, $this->buildHeaders($operation))->withBody(
+            Utils::streamFor($this->serialize($message))
+        );
+    }
+
+    protected function withHeaders(RequestInterface $request, array $headers) {
+        foreach ($headers as $key => $value) {
+            $request = $request->withHeader($key, $value);
+        }
+
+        return $request;
     }
 
     protected function buildHeaders(string $operation)
