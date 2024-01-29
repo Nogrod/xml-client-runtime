@@ -19,6 +19,7 @@ use JMS\Serializer\Visitor\Factory\XmlSerializationVisitorFactory;
 use Nogrod\XMLClientRuntime\Exception\ServerException;
 use Nogrod\XMLClientRuntime\Exception\UnexpectedFormatException;
 use Nogrod\XMLClientRuntime\Handler\JsonDateHandler;
+use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -106,6 +107,15 @@ class Client
         return $serializerBuilder->build();
     }
 
+    /**
+     * @param $operation
+     * @param $outClass
+     * @param $message
+     * @return mixed
+     * @throws ServerException
+     * @throws UnexpectedFormatException
+     * @throws ClientExceptionInterface
+     */
     public function call($operation, $outClass, $message)
     {
         $this->prepareMessage($operation, $message);
@@ -150,6 +160,10 @@ class Client
         return $this->responseMessage;
     }
 
+    /**
+     * @param $option
+     * @return array|mixed|null
+     */
     public function getConfig($option = null)
     {
         return $option === null ? $this->config : (isset($this->config[$option]) ? $this->config[$option] : null);

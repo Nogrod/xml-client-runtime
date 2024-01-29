@@ -16,9 +16,9 @@
     "php-http/httplug": "^2.0",
     "php-http/message": "^1.0",
     "psr/http-factory": "^1.0",
-    "psr/http-message": "^1.0",
+    "psr/http-message": "^2.0",
     "sabre/xml": "^4.0",
-    "symfony/expression-language": "^4.0|^5.0"
+    "symfony/expression-language": "^5.0|^6.0"
   },
   "autoload": {
     "psr-4": {
