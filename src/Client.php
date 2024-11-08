@@ -212,19 +212,51 @@ class Client
      */
     public function serializeSabre($message, $encoding = 'utf-8', $indent = true)
     {
+        return $this->serializeSabreInternal($message, null, $encoding, $indent);
+    }
+
+    /**
+     * @param string $message
+     * @param string $type
+     *
+     * @return string
+     */
+    public function serializeSabreFile($message, $file, $encoding = 'utf-8', $indent = true)
+    {
+        return $this->serializeSabreInternal($message, $file, $encoding, $indent);
+    }
+
+    /**
+     * @param string $message
+     * @param string $type
+     *
+     * @return string
+     */
+    public function serializeSabreInternal($message, $file = null, $encoding = 'utf-8', $indent = true)
+    {
         $classname = get_class($message);
         $classname = mb_substr($classname, strrpos($classname, '\\') + 1);
 
         //return $this->sabre->write($classname, $message);
         $w = $this->sabre->getWriter();
         \Closure::fromCallable(function () { $this->namespacesWritten = true; })->call($w);
-        $w->openMemory();
+        if ($file === null) {
+            $w->openMemory();
+        } else {
+            $w->openUri($file);
+        }
         $w->contextUri = null;
         $w->setIndent($indent);
         $w->startDocument('1.0', $encoding);
         $w->writeElement($classname, $message);
+        $w->flush();
+        if ($file === null) {
+            return $w->outputMemory();
+        } else {
+            $w->flush();
+        }
 
-        return $w->outputMemory();
+        return null;
     }
 
     protected function getUrl()
