@@ -13,7 +13,9 @@ class Func
                 continue;
             }
             if ($isArray) {
-                $result[] = $item['value'];
+                if ($item['value'] !== null) {
+                    $result[] = $item['value'];
+                }
             } else {
                 return $item['value'];
             }
