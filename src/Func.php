@@ -5,7 +5,7 @@ namespace Nogrod\XMLClientRuntime;
 
 class Func
 {
-    public static function mapArray(array &$array, string $name)
+    public static function mapArray(array &$array, string $name, bool $isValue = false)
     {
         $result = [];
         foreach ($array as $key => $value) {
@@ -16,8 +16,10 @@ class Func
             $tmpAttr = $value['attributes'];
             unset($array[$key]);
             if ($tmpValue !== null) {
-                foreach ($tmpAttr as $attrKey => $attrValue) {
-                    $tmpValue[] = ['name' => $attrKey, 'value' => $attrValue, 'attributes' => []];
+                if (!$isValue) {
+                    foreach ($tmpAttr as $attrKey => $attrValue) {
+                        $tmpValue[] = ['name' => $attrKey, 'value' => $attrValue, 'attributes' => []];
+                    }
                 }
                 $result[] = $tmpValue;
             }
@@ -32,15 +34,15 @@ class Func
             if ($value['name'] !== $name) {
                 continue;
             }
-            $tmpValue = $value['value'];
-            $tmpAttr = $value['attributes'];
-            unset($array[$key]);
-            if (!is_array($tmpValue)) {
-                $tmpValue = [['name' => 'value', 'value' => $tmpValue, 'attributes' => []]];
+            if (is_array($value['value'])) {
+                $tmpValue = $value['value'];
+            } else {
+                $tmpValue = [['name' => 'value', 'value' => $value['value'], 'attributes' => []]];
             }
-            foreach ($tmpAttr as $attrKey => $attrValue) {
+            foreach ($value['attributes'] as $attrKey => $attrValue) {
                 $tmpValue[] = ['name' => $attrKey, 'value' => $attrValue, 'attributes' => []];
             }
+            unset($array[$key]);
 
             return $tmpValue;
         }
@@ -56,7 +58,6 @@ class Func
             }
             $tmpValue = $value['value'];
             unset($array[$key]);
-
             return $tmpValue;
         }
 
