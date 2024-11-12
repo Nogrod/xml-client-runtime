@@ -32,15 +32,15 @@ class Func
             if ($value['name'] !== $name) {
                 continue;
             }
-            if (is_array($value['value'])) {
-                $tmpValue = $value['value'];
-            } else {
-                $tmpValue = [['name' => 'value', 'value' => $value['value'], 'attributes' => []]];
+            $tmpValue = $value['value'];
+            $tmpAttr = $value['attributes'];
+            unset($array[$key]);
+            if (!is_array($tmpValue)) {
+                $tmpValue = [['name' => 'value', 'value' => $tmpValue, 'attributes' => []]];
             }
-            foreach ($value['attributes'] as $attrKey => $attrValue) {
+            foreach ($tmpAttr as $attrKey => $attrValue) {
                 $tmpValue[] = ['name' => $attrKey, 'value' => $attrValue, 'attributes' => []];
             }
-            unset($array[$key]);
 
             return $tmpValue;
         }
@@ -56,6 +56,7 @@ class Func
             }
             $tmpValue = $value['value'];
             unset($array[$key]);
+
             return $tmpValue;
         }
 
