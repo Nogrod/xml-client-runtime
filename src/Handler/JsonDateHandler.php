@@ -29,9 +29,9 @@ class JsonDateHandler implements SubscribingHandlerInterface
     /**
      * {@inheritdoc}
      */
-    public static function getSubscribingMethods()
+    public static function getSubscribingMethods(): array
     {
-        $methods = [
+        return [
             [
                 'type' => 'GoetasWebservices\Xsd\XsdToPhp\XMLSchema\DateTime',
                 'direction' => GraphNavigatorInterface::DIRECTION_DESERIALIZATION,
@@ -77,8 +77,6 @@ class JsonDateHandler implements SubscribingHandlerInterface
                 'method' => 'serializeDateInterval',
             ],
         ];
-
-        return $methods;
     }
 
     public function __construct(string $defaultFormat = \DateTime::ATOM, string $defaultTimezone = 'UTC', bool $xmlCData = true)
@@ -116,7 +114,6 @@ class JsonDateHandler implements SubscribingHandlerInterface
     }
 
     /**
-     * @param array $type
      *
      * @return \DOMCdataSection|\DOMText|mixed
      */

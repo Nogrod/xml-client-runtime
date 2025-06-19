@@ -21,41 +21,33 @@ use Nogrod\XMLClientRuntime\Exception\UnexpectedFormatException;
 use Nogrod\XMLClientRuntime\Handler\JsonDateHandler;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Sabre\Xml\Service;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
+/**
+ * Client
+ */
 class Client
 {
     /**
      * @var Serializer
      */
-    protected $serializer;
+    protected SerializerInterface|Serializer $serializer;
 
-    /** @var \Sabre\Xml\Service */
-    protected $sabre;
+    protected ?Service $sabre;
 
-    /**
-     * @var ClientInterface
-     */
-    protected $client;
+    protected ClientInterface $client;
 
-    /**
-     * @var Psr17Factory
-     */
-    protected $messageFactory;
+    protected Psr17Factory $messageFactory;
 
-    /**
-     * @var RequestInterface
-     */
-    private $requestMessage;
+    private RequestInterface $requestMessage;
 
-    /**
-     * @var ResponseInterface
-     */
-    private $responseMessage;
+    private ResponseInterface $responseMessage;
 
-    private $config;
+    private array $config;
 
     public function __construct(array $config = [], Serializer $serializer = null, Psr17Factory $messageFactory = null, ClientInterface $client = null)
     {
@@ -73,7 +65,7 @@ class Client
      *
      * @return SerializerInterface
      */
-    private static function createSerializer(array $jmsMetadata, string $cacheDir = null, callable $callback = null)
+    private static function createSerializer(array $jmsMetadata, string $cacheDir = null, callable $callback = null): SerializerInterface
     {
         $serializerBuilder = SerializerBuilder::create();
 
@@ -116,7 +108,7 @@ class Client
      * @throws UnexpectedFormatException
      * @throws ClientExceptionInterface
      */
-    public function call($operation, $outClass, $message)
+    public function call($operation, string $outClass, $message): mixed
     {
         $this->prepareMessage($operation, $message);
         $this->requestMessage = $request = $this->buildRequest($operation, $message);
@@ -147,7 +139,7 @@ class Client
     /**
      * @return RequestInterface|null
      */
-    public function __getLastRequestMessage()
+    public function __getLastRequestMessage(): ?RequestInterface
     {
         return $this->requestMessage;
     }
@@ -155,7 +147,7 @@ class Client
     /**
      * @return ResponseInterface|null
      */
-    public function __getLastResponseMessage()
+    public function __getLastResponseMessage(): ?ResponseInterface
     {
         return $this->responseMessage;
     }
@@ -164,12 +156,12 @@ class Client
      * @param $option
      * @return array|mixed|null
      */
-    public function getConfig($option = null)
+    public function getConfig(?string $option = null): mixed
     {
-        return $option === null ? $this->config : (isset($this->config[$option]) ? $this->config[$option] : null);
+        return $option === null ? $this->config : ($this->config[$option] ?? null);
     }
 
-    public function setConfig(array $configuration)
+    public function setConfig(array $configuration): void
     {
         $this->config = array_merge($this->config, $configuration);
     }
@@ -181,14 +173,14 @@ class Client
      *
      * @return mixed
      */
-    public function deserialize($body, $outClass, $type = 'xml')
+    public function deserialize(string $body, string $outClass, string $type = 'xml'): mixed
     {
         $outClass = ltrim($outClass, "\\");
 
         return $this->serializer->deserialize($body, $outClass, $type);
     }
 
-    public function deserializeSabre($body)
+    public function deserializeSabre(string $body): array|object|string
     {
         return $this->sabre->parse($body);
     }
@@ -199,7 +191,7 @@ class Client
      *
      * @return string
      */
-    public function serialize($message, $type = 'xml')
+    public function serialize(object $message, string $type = 'xml'): string
     {
         return $this->serializer->serialize($message, $type);
     }
@@ -210,7 +202,7 @@ class Client
      *
      * @return string
      */
-    public function serializeSabre($message, $encoding = 'utf-8', $indent = true)
+    public function serializeSabre(object $message, string $encoding = 'utf-8', bool $indent = true): ?string
     {
         return $this->serializeSabreInternal($message, null, $encoding, $indent);
     }
@@ -221,7 +213,7 @@ class Client
      *
      * @return string
      */
-    public function serializeSabreFile($message, $file, $encoding = 'utf-8', $indent = true)
+    public function serializeSabreFile(object $message, string $file, string $encoding = 'utf-8', bool $indent = true): ?string
     {
         return $this->serializeSabreInternal($message, $file, $encoding, $indent);
     }
@@ -232,7 +224,7 @@ class Client
      *
      * @return string
      */
-    public function serializeSabreInternal($message, $file = null, $encoding = 'utf-8', $indent = true)
+    public function serializeSabreInternal(object $message, ?string $file = null, string $encoding = 'utf-8', bool $indent = true): ?string
     {
         $classname = get_class($message);
         $classname = mb_substr($classname, strrpos($classname, '\\') + 1);
@@ -259,28 +251,28 @@ class Client
         return null;
     }
 
-    protected function getUrl()
+    protected function getUrl(): ?string
     {
         return null;
     }
 
-    protected function handleResponseError($response, $request)
+    protected function handleResponseError(ResponseInterface $response, RequestInterface|MessageInterface $request): void
     {
         //serialize ErrorMessage class
         throw new UnexpectedFormatException($response, $request, $request->getBody().PHP_EOL.$response->getBody());
     }
 
-    protected function handleResponse($response, $outClass)
+    protected function handleResponse(ResponseInterface $response, string $outClass): mixed
     {
         return $this->deserialize((string) $response->getBody(), $outClass);
     }
 
-    protected function prepareMessage($operation, $message)
+    protected function prepareMessage(string $operation, object $message): object
     {
         return $message;
     }
 
-    protected function buildRequest($operation, $message)
+    protected function buildRequest(string $operation, object $message): RequestInterface|MessageInterface
     {
         $psrRequest = $this->messageFactory->createRequest('POST', $this->getUrl());
 
@@ -289,7 +281,8 @@ class Client
         );
     }
 
-    protected function withHeaders(RequestInterface $request, array $headers) {
+    protected function withHeaders(RequestInterface $request, array $headers): RequestInterface|MessageInterface
+    {
         foreach ($headers as $key => $value) {
             $request = $request->withHeader($key, $value);
         }
@@ -297,20 +290,17 @@ class Client
         return $request;
     }
 
-    protected function buildHeaders(string $operation)
+    protected function buildHeaders(string $operation): array
     {
         return [
             'Content-Type' => 'text/xml; charset=utf-8',
         ];
     }
 
-    protected function getJmsMetaPath()
+    protected function getJmsMetaPath(): array
     {
         return [];
     }
 
-    protected function getSabre()
-    {
-        return null;
-    }
+    protected abstract function getSabre(): Service;
 }

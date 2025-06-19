@@ -7,8 +7,8 @@ use Psr\Http\Message\ResponseInterface;
 
 class ServerException extends \Exception
 {
-    private $request;
-    private $response;
+    private RequestInterface $request;
+    private ResponseInterface $response;
 
     public function __construct(ResponseInterface $response, RequestInterface $request, \Exception $previous = null)
     {
@@ -20,7 +20,7 @@ class ServerException extends \Exception
     /**
      * @return RequestInterface
      */
-    public function getRequest()
+    public function getRequest(): RequestInterface
     {
         return $this->request;
     }
@@ -28,7 +28,7 @@ class ServerException extends \Exception
     /**
      * @return ResponseInterface
      */
-    public function getResponse()
+    public function getResponse(): ResponseInterface
     {
         return $this->response;
     }

@@ -7,6 +7,11 @@ use Psr\Http\Message\ResponseInterface;
 
 class UnexpectedFormatException extends ServerException
 {
+    /**
+     * @param ResponseInterface $response
+     * @param RequestInterface $request
+     * @param $message
+     */
     public function __construct(ResponseInterface $response, RequestInterface $request, $message)
     {
         parent::__construct($response, $request);
