@@ -30,7 +30,7 @@ use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 /**
  * Client
  */
-class Client
+abstract class Client
 {
     /**
      * @var Serializer
