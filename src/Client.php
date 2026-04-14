@@ -49,7 +49,7 @@ abstract class Client
 
     private array $config;
 
-    public function __construct(array $config = [], Serializer $serializer = null, Psr17Factory $messageFactory = null, ClientInterface $client = null)
+    public function __construct(array $config = [], ?Serializer $serializer = null, ?Psr17Factory $messageFactory = null, ?ClientInterface $client = null)
     {
         $this->config = $config;
         $this->serializer = $serializer ?: self::createSerializer($this->getJmsMetaPath(), $this->getConfig('cacheDir'));
@@ -65,7 +65,7 @@ abstract class Client
      *
      * @return SerializerInterface
      */
-    private static function createSerializer(array $jmsMetadata, string $cacheDir = null, callable $callback = null): SerializerInterface
+    private static function createSerializer(array $jmsMetadata, ?string $cacheDir = null, ?callable $callback = null): SerializerInterface
     {
         $serializerBuilder = SerializerBuilder::create();
 
