@@ -226,13 +226,43 @@ abstract class Client
      */
     public function serializeSabreInternal(object $message, ?string $file = null, string $encoding = 'utf-8', bool $indent = true): ?string
     {
-        $classname = get_class($message);
-        $classname = mb_substr($classname, strrpos($classname, '\\') + 1);
+        $w = $this->openSabreWriter($file, $encoding, $indent);
+        $w->writeElement(self::getRootElementName($message), $message);
 
-        //return $this->sabre->write($classname, $message);
-        $w = $this->sabre->getWriter();
-        \Closure::fromCallable(function () { $this->namespacesWritten = true; })->call($w);
-        if ($file === null) {
+        return $this->closeSabreWriter($w);
+    }
+
+    /**
+     * Returns the local class name of $message, which is what the root element is named after.
+     */
+    public static function getRootElementName(object $message): string
+    {
+        $classname = get_class($message);
+        $pos = strrpos($classname, '\\');
+
+        return $pos === false ? $classname : mb_substr($classname, $pos + 1);
+    }
+
+    /**
+     * Opens a writer for building a document element by element.
+     *
+     * The document is started but no root element is written: the caller opens and
+     * closes elements itself and must finish through closeSabreWriter(). Use this
+     * when a document holds an unbounded number of child elements that should not
+     * all be built in memory first.
+     *
+     * @param string|null $file target path, or null to build the document in memory
+     */
+    public function openSabreWriter(?string $file = null, string $encoding = 'utf-8', bool $indent = true): Writer
+    {
+        // Same setup as Service::getWriter(), but on a Writer that can suppress the
+        // automatic xmlns declarations without reflection.
+        $w = new Writer();
+        $w->namespaceMap = $this->sabre->namespaceMap;
+        $w->classMap = $this->sabre->classMap;
+        $w->markNamespacesWritten();
+        $w->inMemory = $file === null;
+        if ($w->inMemory) {
             $w->openMemory();
         } else {
             $w->openUri($file);
@@ -240,13 +270,25 @@ abstract class Client
         $w->contextUri = null;
         $w->setIndent($indent);
         $w->startDocument('1.0', $encoding);
-        $w->writeElement($classname, $message);
-        $w->flush();
-        if ($file === null) {
-            return $w->outputMemory();
-        } else {
-            $w->flush();
+
+        return $w;
+    }
+
+    /**
+     * Finishes a writer opened by openSabreWriter().
+     *
+     * @return string|null the document when the writer was opened in memory mode, null when writing to a file
+     */
+    public function closeSabreWriter(Writer $writer): ?string
+    {
+        $writer->endDocument();
+        if ($writer->inMemory) {
+            // Careful: flush() empties the buffer and returns it, so calling it
+            // before outputMemory() would leave nothing to read.
+            return $writer->outputMemory();
         }
+
+        $writer->flush();
 
         return null;
     }
