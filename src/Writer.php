@@ -32,6 +32,24 @@ class Writer extends \Sabre\Xml\Writer
     private bool $namespaceDeclaredHere = false;
 
     /**
+     * Whether the element currently open is a global element at the document root, whose
+     * direct children declare their namespace themselves (see writeRootNamespace()).
+     */
+    private bool $isGlobal = false;
+
+    /**
+     * Whether the parent of the element currently open is such an element.
+     */
+    private bool $parentIsGlobal = false;
+
+    /**
+     * isGlobal of the parent of each open element, innermost last.
+     *
+     * @var array<int, bool>
+     */
+    private array $isGlobalStack = [];
+
+    /**
      * Suppresses the xmlns declarations sabre writes automatically.
      *
      * On the first element sabre emits every entry of the namespaceMap as an xmlns
@@ -48,23 +66,36 @@ class Writer extends \Sabre\Xml\Writer
      *
      * The generated types call this for every element they write. Declaring it only
      * where it changes keeps it on the root of a document instead of repeating it on
-     * every element below.
+     * every element below. Direct children of a global element always declare it, see
+     * writeRootNamespace().
      */
     public function writeDefaultNamespace(string $namespace): void
     {
-        if ($this->defaultNamespace !== $namespace) {
+        if ($this->parentIsGlobal) {
+            $this->declareNamespaceHere($namespace);
+        } elseif ($this->defaultNamespace !== $namespace) {
             $this->writeAttribute('xmlns', $namespace);
         }
     }
 
     /**
      * Declares $namespace as default namespace on the open element even if it is already
-     * in scope, unless this element declares it already.
+     * in scope. On the root element of the document, its direct children are made to
+     * declare their namespace themselves as well.
      *
-     * Used for global elements: eBay processes the requests of a BulkDataExchangeRequests
-     * file one by one and rejects those without their own xmlns.
+     * Called for global elements such as API requests and responses or a
+     * BulkDataExchangeRequests file. eBay processes the requests of such a file one by
+     * one and rejects those without their own xmlns; marking the file root covers its
+     * requests even when they are built from the *Type classes, which are no global
+     * elements themselves.
      */
     public function writeRootNamespace(string $namespace): void
+    {
+        $this->declareNamespaceHere($namespace);
+        $this->isGlobal = 1 === \count($this->defaultNamespaceStack);
+    }
+
+    private function declareNamespaceHere(string $namespace): void
     {
         if (!$this->namespaceDeclaredHere || $this->defaultNamespace !== $namespace) {
             $this->writeAttribute('xmlns', $namespace);
@@ -76,8 +107,7 @@ class Writer extends \Sabre\Xml\Writer
         // A Clark-notation name is opened through startElementNs(), or through this
         // method again with the local name, and is tracked there.
         if ('{' !== $name[0]) {
-            $this->defaultNamespaceStack[] = $this->defaultNamespace;
-            $this->namespaceDeclaredHere = false;
+            $this->enter();
         }
 
         return parent::startElement($name);
@@ -85,7 +115,7 @@ class Writer extends \Sabre\Xml\Writer
 
     public function startElementNs(?string $prefix, string $name, ?string $namespace): bool
     {
-        $this->defaultNamespaceStack[] = $this->defaultNamespace;
+        $this->enter();
         $this->namespaceDeclaredHere = null === $prefix && null !== $namespace;
         if ($this->namespaceDeclaredHere) {
             $this->defaultNamespace = $namespace;
@@ -96,16 +126,31 @@ class Writer extends \Sabre\Xml\Writer
 
     public function endElement(): bool
     {
-        $this->defaultNamespace = array_pop($this->defaultNamespaceStack);
+        $this->leave();
 
         return parent::endElement();
     }
 
     public function fullEndElement(): bool
     {
-        $this->defaultNamespace = array_pop($this->defaultNamespaceStack);
+        $this->leave();
 
         return parent::fullEndElement();
+    }
+
+    private function enter(): void
+    {
+        $this->defaultNamespaceStack[] = $this->defaultNamespace;
+        $this->isGlobalStack[] = $this->parentIsGlobal = $this->isGlobal;
+        $this->isGlobal = false;
+        $this->namespaceDeclaredHere = false;
+    }
+
+    private function leave(): void
+    {
+        $this->defaultNamespace = array_pop($this->defaultNamespaceStack);
+        $this->isGlobal = (bool) array_pop($this->isGlobalStack);
+        $this->parentIsGlobal = (bool) end($this->isGlobalStack);
     }
 
     public function writeAttribute($name, $value): bool
