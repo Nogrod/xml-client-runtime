@@ -9,7 +9,7 @@
   "license": "MIT",
   "require": {
     "php": "^8.0",
-    "guzzlehttp/psr7": "^1.0|^2.0",
+    "guzzlehttp/psr7": "^2.12.3",
     "php-http/discovery": "^1.0",
     "php-http/httplug": "^2.0",
     "php-http/message": "^1.0",
